@@ -36,18 +36,6 @@ async function run() {
       });
       res.send({ token });
     });
-    //  meals related api
-    app.get("/meals", async (req, res) => {
-      const result = await mealsCollection.find().toArray();
-      res.send(result);
-    });
-    //  specific meal by id
-    app.get("/meal/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await mealsCollection.findOne(query);
-      res.send(result);
-    });
 
     // middlewares
     const verifyToken = (req, res, next) => {
@@ -85,9 +73,9 @@ async function run() {
     });
     app.get("/users/admin/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
-      if (email !== req.decoded.email) {
-        return res.status(403).send({ message: "forbidden access" });
-      }
+      // if (email !== req.decoded.email) {
+      //   return res.status(403).send({ message: "forbidden access" });
+      // }
       const query = { email: email };
       const user = await userCollection.findOne(query);
       let admin = false;
@@ -121,6 +109,30 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //  meals related api
+    app.get("/meals", async (req, res) => {
+      const result = await mealsCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/meals", async (req, res) => {
+      const item = req.body;
+      const result = await mealsCollection.insertOne(item);
+      res.send(result);
+    });
+    //  specific meal by id
+    app.get("/meal/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await mealsCollection.findOne(query);
+      res.send(result);
+    });
+    app.delete("/meals/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await mealsCollection.deleteOne(query);
       res.send(result);
     });
     // Send a ping to confirm a successful connection
