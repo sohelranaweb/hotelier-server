@@ -129,6 +129,33 @@ async function run() {
       const result = await mealsCollection.findOne(query);
       res.send(result);
     });
+    app.put("/meals/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const meal = req.body;
+      const updateDoc = {
+        $set: {
+          title: meal.title,
+          admin_name: meal.admin_name,
+          admin_email: meal.admin_email,
+          likes: meal.likes,
+          date: meal.date,
+          reviews: meal.reviews,
+          ingredients: meal.ingredients,
+          category: meal.category,
+          price: meal.price,
+          rating: meal.rating,
+          description: meal.description,
+        },
+      };
+      const result = await mealsCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
     app.delete("/meals/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
