@@ -26,7 +26,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const mealsCollection = client.db("hotelierDb").collection("meals");
     const upcomingMealsCollection = client
       .db("hotelierDb")
@@ -34,6 +34,9 @@ async function run() {
     const userCollection = client.db("hotelierDb").collection("users");
     const badgeCollection = client.db("hotelierDb").collection("badge");
     const paymentCollection = client.db("hotelierDb").collection("payments");
+    const mealRequestCollection = client
+      .db("hotelierDb")
+      .collection("meal-request");
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
@@ -106,6 +109,7 @@ async function run() {
       const updateDoc = {
         $set: {
           badge: user.badge,
+          status: user.status,
         },
       };
       const result = await userCollection.updateOne(filter, updateDoc, options);
@@ -190,9 +194,48 @@ async function run() {
       res.send(result);
     });
 
+    // meal request api
+    app.get("/meal-request", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const result = await mealRequestCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.patch("/meal-request/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const meal = req.body;
+      const updateDoc = {
+        $set: {
+          status: meal.status,
+        },
+      };
+      const result = await mealRequestCollection.updateOne(
+        query,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+    app.get("/meal-request/admin", async (req, res) => {
+      const result = await mealRequestCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/meal-request", async (req, res) => {
+      const mealItem = req.body;
+      const result = await mealRequestCollection.insertOne(mealItem);
+      res.send(result);
+    });
     // upcoming meal related api
     app.get("/upcoming-meals", async (req, res) => {
       const result = await upcomingMealsCollection.find().toArray();
+      res.send(result);
+    });
+    app.get("/upcomingMeal/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await upcomingMealsCollection.findOne(query);
       res.send(result);
     });
     app.post("/upcoming-meals", async (req, res) => {
@@ -233,7 +276,7 @@ async function run() {
     app.post("/payments", async (req, res) => {
       const payment = req.body;
       const paymentResult = await paymentCollection.insertOne(payment);
-      console.log("payment Info", payment);
+      // console.log("payment Info", payment);
       res.send(paymentResult);
     });
     // Send a ping to confirm a successful connection
