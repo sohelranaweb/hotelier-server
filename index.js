@@ -34,6 +34,7 @@ async function run() {
     const userCollection = client.db("hotelierDb").collection("users");
     const badgeCollection = client.db("hotelierDb").collection("badge");
     const paymentCollection = client.db("hotelierDb").collection("payments");
+    const reviewCollection = client.db("hotelierDb").collection("reviews");
     const mealRequestCollection = client
       .db("hotelierDb")
       .collection("meal-request");
@@ -88,7 +89,7 @@ async function run() {
       const result = await userCollection.findOne(query);
       res.send(result);
     });
-    app.get("/users/admin/:email", verifyToken, async (req, res) => {
+    app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
       // if (email !== req.decoded.email) {
       //   return res.status(403).send({ message: "forbidden access" });
@@ -136,7 +137,7 @@ async function run() {
       const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    app.delete("/users/:id", async (req, res) => {
+    app.delete("/users/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.deleteOne(query);
@@ -148,7 +149,7 @@ async function run() {
       const result = await mealsCollection.find().toArray();
       res.send(result);
     });
-    app.post("/meals", async (req, res) => {
+    app.post("/meals", verifyToken, verifyAdmin, async (req, res) => {
       const item = req.body;
       const result = await mealsCollection.insertOne(item);
       res.send(result);
@@ -160,7 +161,7 @@ async function run() {
       const result = await mealsCollection.findOne(query);
       res.send(result);
     });
-    app.put("/meals/:id", async (req, res) => {
+    app.put("/meals/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -187,6 +188,7 @@ async function run() {
       );
       res.send(result);
     });
+
     app.delete("/meals/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -196,7 +198,11 @@ async function run() {
 
     // meal request api
     app.get("/meal-request", async (req, res) => {
-      const email = req.query.email;
+      const result = await mealRequestCollection.find().toArray();
+      res.send(result);
+    });
+    app.get("/meal-request/:email", async (req, res) => {
+      const email = req.params.email;
       const query = { email: email };
       const result = await mealRequestCollection.find(query).toArray();
       res.send(result);
@@ -278,6 +284,45 @@ async function run() {
       const paymentResult = await paymentCollection.insertOne(payment);
       // console.log("payment Info", payment);
       res.send(paymentResult);
+    });
+
+    // review related api
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewCollection.find().toArray();
+      res.send(result);
+    });
+    app.get("/reviews/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await reviewCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+    app.patch("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          review_comment: req.body.review_comment,
+        },
+      };
+      const result = await reviewCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+    app.delete("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await reviewCollection.deleteOne(query);
+      res.send(result);
     });
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
